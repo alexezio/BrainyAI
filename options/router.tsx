@@ -1,18 +1,20 @@
-import {createBrowserRouter, useLocation} from "react-router-dom";
+import { createBrowserRouter, useLocation } from "react-router-dom";
 import Index from "~options/pages";
 import ShortcutMenu from "~options/pages/ShortcutMenu";
+import General from "~options/pages/General";
 import Layout from "~options/layout";
 import OptionsProvider from "~provider/Options";
-import {Fragment, useContext, useEffect} from "react";
-import {GoogleAnalyticsContext} from "~provider/GoogleAnalyticsProvider";
+import { Fragment, useContext, useEffect } from "react";
+import { GoogleAnalyticsContext } from "~provider/GoogleAnalyticsProvider";
 
 export const PATH_SETTING_SIDEBAR = "path_shortcut";
 export const PATH_SETTING_CONTACT_US = "path_contact_us";
 export const PATH_SETTING_SHORTCUT = "";
+export const PATH_SETTING_GENERAL = "general";
 
-const Wrapper = ({children}) => {
+const Wrapper = ({ children }) => {
     const location = useLocation();
-    const {analytics} = useContext(GoogleAnalyticsContext);
+    const { analytics } = useContext(GoogleAnalyticsContext);
 
     useEffect(() => {
         void analytics.current.firePageViewEvent("", location.pathname);
@@ -27,7 +29,7 @@ export const router = createBrowserRouter([
     {
         path: "options.html",
         element: <Wrapper>
-            <OptionsProvider><Layout/></OptionsProvider>
+            <OptionsProvider><Layout /></OptionsProvider>
         </Wrapper>,
         children: [
             // {
@@ -36,11 +38,15 @@ export const router = createBrowserRouter([
             // },
             {
                 path: PATH_SETTING_SIDEBAR,
-                element: <Index/>,
+                element: <Index />,
             },
             {
                 path: PATH_SETTING_SHORTCUT,
-                element: <ShortcutMenu/>,
+                element: <ShortcutMenu />,
+            },
+            {
+                path: PATH_SETTING_GENERAL,
+                element: <General />,
             },
         ],
     },

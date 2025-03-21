@@ -1,5 +1,5 @@
-import {PromptTypes} from "~options/constant/PromptTypes";
-import {PROMPT_PLACEHOLDER_LANG, PROMPT_PLACEHOLDER_TEXT} from "~utils";
+import { PromptTypes } from "~options/constant/PromptTypes";
+import { PROMPT_PLACEHOLDER_LANG, PROMPT_PLACEHOLDER_TEXT } from "~utils";
 
 export const PromptDatas = [
     {
@@ -9,7 +9,7 @@ export const PromptDatas = [
         title: 'Translate',
         language: 'English',
         isSelect: true,
-        text:`I would like you to translate the text delimited by triple quotes into ${PROMPT_PLACEHOLDER_LANG} language, ensuring that the translation is colloquial and authentic. Only give me the output and nothing else. Do not wrap responses in quotes. """ ${PROMPT_PLACEHOLDER_TEXT} """`,
+        text: `I would like you to translate the text delimited by triple quotes into ${PROMPT_PLACEHOLDER_LANG} language, ensuring that the translation is colloquial and authentic. Only give me the output and nothing else. Do not wrap responses in quotes. """ ${PROMPT_PLACEHOLDER_TEXT} """`,
     },
     {
         id: 1013,
@@ -46,6 +46,15 @@ export const PromptDatas = [
         language: 'English',
         isSelect: true,
         text: `Correct grammar mistakes, typos, and factual errors of the following paragraph :${PROMPT_PLACEHOLDER_TEXT} .Please respond in ${PROMPT_PLACEHOLDER_LANG} , focusing on the core topic. `,
+    },
+    {
+        id: 1017,
+        itemType: PromptTypes.DEFAULT,
+        imageKey: 'Summarize',
+        title: 'WebSummary',
+        language: 'Chinese',
+        isSelect: true,
+        text: `请清晰简洁地总结以下网页内容，捕捉主要观点和关键信息。总结应该完整全面，同时保持简洁。请用中文回答。`,
     },
 ];
 export const AskPromptId = 100001;

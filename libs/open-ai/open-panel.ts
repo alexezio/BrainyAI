@@ -1,7 +1,7 @@
-import {MESSAGE_ACTION_OPEN_PANEL, STORAGE_OPEN_PANEL_INIT_DATA} from "~utils";
-import {Storage} from '@plasmohq/storage';
-import {Logger} from "~utils/logger";
-import {FileTypes} from "~options/constant/FileTypes";
+import { MESSAGE_ACTION_OPEN_PANEL, STORAGE_OPEN_PANEL_INIT_DATA } from "~utils";
+import { Storage } from '@plasmohq/storage';
+import { Logger } from "~utils/logger";
+import { FileTypes } from "~options/constant/FileTypes";
 
 export enum PromptTemplate {
     JUST_OPEN = 'JUST_OPEN',
@@ -11,6 +11,7 @@ export enum PromptTemplate {
     EXPLAIN = 'Explain',
     TRANSLATE = 'Translate',
     SUMMARY = 'Summarize',
+    WEB_SUMMARY = 'WebSummary',
     REPHRASE = 'Rephrase',
     GAMMA_CHECK = 'Gamma_check'
 }
@@ -38,7 +39,7 @@ export class IAskAi {
     isHaveUploadFile?: boolean;
 
 
-    constructor({appendix, prompt, promptText = null, lang, text = null, promptImageUri = null, promptImageTitle = null, promptType = 1, uploadFile = null, isHaveUploadFile = false}: {
+    constructor({ appendix, prompt, promptText = null, lang, text = null, promptImageUri = null, promptImageTitle = null, promptType = 1, uploadFile = null, isHaveUploadFile = false }: {
         appendix?: string,
         prompt: string,
         promptText?: string | null,
@@ -47,7 +48,7 @@ export class IAskAi {
         promptImageUri?: string | null,
         promptImageTitle?: string | null,
         promptType?: number,
-        uploadFile?: [string, string, Map<string,string>, FileTypes,File|null] | null,
+        uploadFile?: [string, string, Map<string, string>, FileTypes, File | null] | null,
         isHaveUploadFile?: boolean
     }) {
         this.prompt = prompt;
@@ -92,10 +93,10 @@ const openPanel = function (openType: OpenPanelType, data: IAskAi | string) {
         openType: openType,
         data: data
     } as IOpenPanelData).then(() => {
-        void chrome.runtime.sendMessage({action: MESSAGE_ACTION_OPEN_PANEL, data: data});
+        void chrome.runtime.sendMessage({ action: MESSAGE_ACTION_OPEN_PANEL, data: data });
     });
 };
 
 export const justOpenPanel = function () {
-    void chrome.runtime.sendMessage({action: MESSAGE_ACTION_OPEN_PANEL});
+    void chrome.runtime.sendMessage({ action: MESSAGE_ACTION_OPEN_PANEL });
 };

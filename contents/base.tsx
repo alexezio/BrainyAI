@@ -11,6 +11,7 @@ import {
     MESSAGE_ACTION_SET_QUOTING_SELECTION_TEXT,
     openInPlugin
 } from "~utils";
+import { triggerWebSummarization } from "~utils/web-summary";
 import Icon from "data-base64:~assets/icon.png";
 import AskEditIcon from "data-base64:~assets/icon_ask_content_edit.svg";
 import CTooltip from "~component/common/CTooltip";
@@ -32,6 +33,7 @@ import PupHeaderIcon from "data-base64:~assets/icon_pup_header.svg";
 import { SearchBar } from "~options/component/SearchBar";
 import { Logger } from "~utils/logger";
 import { BASE_ZINDEX } from "~component/common/CPopover";
+import SummarizeIcon from "data-base64:~assets/icon_summarize.svg";
 
 export const getStyle: PlasmoGetStyle = () => {
     const style = document.createElement("style");
@@ -416,8 +418,8 @@ export default function Base() {
 
     const popupQuickPromptConfig = (
         <div className={baseContentStyle.popupQuickConfig}>
-            <div onClick={(e) => dealQuickBarVisibleConfig(e, 1)}>Hide until Next visit</div>
-            <div onClick={(e) => dealQuickBarVisibleConfig(e, 2)}>Disable for this site</div>
+            <div onClick={(e) => dealQuickBarVisibleConfig(e, 1)}>{quickConfigOpen && "Hide Ask AI"}{!quickConfigOpen && "Show Ask AI"}</div>
+            <div onClick={appendCloseHostName.bind(this, window.location.hostname)}>Don't show on this site</div>
         </div>
     );
 
@@ -541,6 +543,18 @@ export default function Base() {
                 boxShadow: '0 4px 12px 0px rgba(0,0,0,.2)'
             }} overlayInnerStyle={{ textAlign: 'center' }}>
                 <img className={'block w-[20px] h-[20px] mx-auto my-auto'} src={SearchBannerIcon} alt='' />
+            </CTooltip>
+        </div>
+
+        <div onClick={() => triggerWebSummarization()}
+            className={'fixed right-[6px] transition-all hover:right-[8px] cursor-pointer bottom-[calc(18%+110px)] flex justify-center items-center bg-white rounded-full h-[32px] w-[32px] shadow-xl transform hover:scale-110'}>
+            <CTooltip title={'网页总结'} autoAdjustOverflow={true} placement="left" overlayStyle={{
+                width: '70px',
+                background: '#000000',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px 0px rgba(0,0,0,.2)'
+            }} overlayInnerStyle={{ textAlign: 'center' }}>
+                <img className={'block w-[20px] h-[20px] mx-auto my-auto'} src={SummarizeIcon} alt='' />
             </CTooltip>
         </div>
 

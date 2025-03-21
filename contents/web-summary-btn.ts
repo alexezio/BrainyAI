@@ -1,6 +1,7 @@
 import type { PlasmoCSConfig } from "plasmo"
 import { triggerWebSummarization } from "~utils/web-summary"
 import * as baseContentStyle from "~style/base-content.module.scss"
+import SummarizeIcon from "data-base64:~assets/icon_summarize.svg"
 
 // Content script configuration
 export const config: PlasmoCSConfig = {
@@ -11,38 +12,9 @@ export const config: PlasmoCSConfig = {
     all_frames: false
 }
 
-// Function to create and add the web summary button to the page
-function createWebSummaryButton() {
-    // Check if the button already exists
-    if (document.querySelector("#brainy-web-summary-btn")) {
-        return
-    }
-
-    // Create the button element
-    const button = document.createElement("div")
-    button.id = "brainy-web-summary-btn"
-    button.className = baseContentStyle.webSummaryBtn
-    button.textContent = "网页总结"
-
-    // Add click handler
-    button.addEventListener("click", (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        triggerWebSummarization()
-    })
-
-    // Add the button to the document
-    document.body.appendChild(button)
-}
-
-// Execute when the content script loads
+// We no longer need to create a separate button since it's implemented in base.tsx
 function main() {
-    // Add the button when the DOM is fully loaded
-    if (document.readyState === "complete") {
-        createWebSummaryButton()
-    } else {
-        window.addEventListener("load", createWebSummaryButton)
-    }
+    // No longer need to add the button
 }
 
 main() 

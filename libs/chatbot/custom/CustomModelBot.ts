@@ -3,8 +3,38 @@ import { Logger } from "~utils/logger";
 import { ErrorCode } from "~utils/errors";
 import { BotCompletionParams } from "~libs/chatbot/IBot";
 import { ConversationResponse, ResponseMessageType } from "~libs/open-ai/open-ai-interface";
+import { BotBase } from "~libs/chatbot/BotBase";
+import { BotSession, SimpleBotMessage } from "~libs/chatbot/BotSessionBase";
 
-export class CustomModelBot {
+// CustomModelSessionSingleton用于管理会话
+class CustomModelSessionSingleton {
+    static globalConversationId: string;
+    private static instances: Map<string, CustomModelSessionSingleton> = new Map();
+    session: BotSession;
+
+    private constructor(globalConversationId: string, modelId: string) {
+        this.session = new BotSession(globalConversationId);
+        // 可以在这里添加modelId特定的初始化
+    }
+
+    static getInstance(globalConversationId: string, modelId: string): CustomModelSessionSingleton {
+        const key = `${globalConversationId}_${modelId}`;
+
+        if (this.globalConversationId !== globalConversationId) {
+            // 如果会话ID变了，清除之前的实例
+            this.instances.delete(key);
+        }
+
+        if (!this.instances.has(key)) {
+            this.instances.set(key, new CustomModelSessionSingleton(globalConversationId, modelId));
+        }
+
+        this.globalConversationId = globalConversationId;
+        return this.instances.get(key)!;
+    }
+}
+
+export class CustomModelBot extends BotBase {
     static botName = "Custom Model";
     static logoSrc = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWJyYWluLWNpcmJ1aXQiPjxwYXRoIGQ9Ik0xMiA0YTUgNSAwIDAgMC01IDV2MTFhMyAzIDAgMCAwIDMgM2g0YTMgMyAwIDAgMCAzLTN2LTdhMiAyIDAgMCAwLTItMiIvPjxwYXRoIGQ9Ik0xOS44OTYgNEMxOS4zIDQuOCAxOCA1LjEgMTcgNWMtMi4yLS4yLTQgMS4xLTQgMyIvPjxwYXRoIGQ9Ik04IDljLTIuIDMtMyAzLjUtNyAyIi8+PHBhdGggZD0iTTkgMTlhMSAxIDAgMSAxIDAgMiIvPjxwYXRoIGQ9Ik01IDEyYTEgMSAwIDEgMCAwLTIiLz48cGF0aCBkPSJNMTkgMTJhMSAxIDAgMSAwIDAtMiIvPjwvc3ZnPg==";
     static maxTokenLimit = 8000;
@@ -35,9 +65,21 @@ export class CustomModelBot {
     private customModelId: string;
     private customModelService: CustomModelService;
     private controller: AbortController | null = null;
+    botSession: CustomModelSessionSingleton; // 添加botSession属性
+    private messageText: string = '';
+    private messageID: string = '';
 
-    constructor(customModelId: string) {
-        this.customModelId = customModelId;
+    constructor(params: any) {
+        super(params);
+        if (typeof params === 'string') {
+            // 处理直接传入modelId的情况
+            this.customModelId = params;
+            this.botSession = CustomModelSessionSingleton.getInstance(this.conversationId, this.customModelId);
+        } else {
+            // 处理传入构造参数对象的情况
+            this.customModelId = params.customModelId || '';
+            this.botSession = CustomModelSessionSingleton.getInstance(params.globalConversationId, this.customModelId);
+        }
         this.customModelService = CustomModelService.getInstance();
     }
 
@@ -83,13 +125,8 @@ export class CustomModelBot {
             CustomModelBot.maxTokenLimit = model.contextWindow;
             CustomModelBot.isReasoning = !!model.isReasoning;
 
-            // 准备 OpenAI 格式的消息
-            const messages = [
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ];
+            // 准备 OpenAI 格式的消息，加入历史消息
+            const messages = this.getOpenAIMessages(prompt);
 
             Logger.log('Custom model completion with messages:', messages);
 
@@ -133,6 +170,8 @@ export class CustomModelBot {
                                     }
 
                                     processedFinalContent = responseText;
+                                    this.messageText = responseText;
+                                    this.messageID = rid;
 
                                     // 发送生成中的消息
                                     cb(
@@ -145,6 +184,8 @@ export class CustomModelBot {
                                 } else {
                                     // 没有推理模型，直接返回累积内容
                                     processedFinalContent = accumulatedContent;
+                                    this.messageText = accumulatedContent;
+                                    this.messageID = rid;
 
                                     cb(
                                         rid,
@@ -161,23 +202,21 @@ export class CustomModelBot {
                     },
                     // 处理错误
                     (error) => {
-                        if (!isDone) {
-                            cb(
-                                rid,
-                                new ConversationResponse({
-                                    message_type: ResponseMessageType.ERROR,
-                                    error: {
-                                        code: ErrorCode.UNKNOWN_ERROR,
-                                        message: error.message || 'Error in streaming response'
-                                    }
-                                })
-                            );
-                        }
+                        Logger.error('Error in streaming chat completion:', error);
+                        cb(
+                            rid,
+                            new ConversationResponse({
+                                message_type: ResponseMessageType.ERROR,
+                                error: {
+                                    code: ErrorCode.UNKNOWN_ERROR,
+                                    message: error.message || 'Error in streaming response'
+                                }
+                            })
+                        );
                     },
-                    // 处理完成
+                    // 完成回调
                     () => {
                         isDone = true;
-                        // 发送最终消息
                         cb(
                             rid,
                             new ConversationResponse({
@@ -185,19 +224,22 @@ export class CustomModelBot {
                                 message_type: ResponseMessageType.DONE
                             })
                         );
+
+                        // 保存消息到会话历史
+                        this.botSession.session.addMessage(new SimpleBotMessage(this.messageText, this.messageID));
                     },
-                    this.controller.signal
+                    // 中止控制器
+                    this.controller ? this.controller.signal : undefined
                 );
             } catch (error) {
-                Logger.error('Error in streaming completion:', error);
-
+                Logger.error('Error in streaming chat completion call:', error);
                 cb(
                     rid,
                     new ConversationResponse({
                         message_type: ResponseMessageType.ERROR,
                         error: {
                             code: ErrorCode.UNKNOWN_ERROR,
-                            message: error.message || 'Error in streaming response'
+                            message: error.message || 'Error calling streaming API'
                         }
                     })
                 );
@@ -218,6 +260,33 @@ export class CustomModelBot {
         }
     }
 
+    // 获取OpenAI格式的消息，包括历史消息
+    private getOpenAIMessages(currentPrompt: string): Array<{ role: string, content: string }> {
+        const messages: Array<{ role: string, content: string }> = [];
+
+        // 添加历史消息
+        const historyMessages = this.botSession.session.messages;
+
+        // 添加历史对话
+        let isUserMessage = true;
+        for (const msg of historyMessages) {
+            // 交替添加用户和助手消息
+            messages.push({
+                role: isUserMessage ? 'user' : 'assistant',
+                content: msg.text
+            });
+            isUserMessage = !isUserMessage;
+        }
+
+        // 添加当前提示
+        messages.push({
+            role: 'user',
+            content: currentPrompt
+        });
+
+        return messages;
+    }
+
     public async chat(prompt: any, onEvent?: (event: any) => void): Promise<string> {
         try {
             // 获取自定义模型信息
@@ -231,17 +300,14 @@ export class CustomModelBot {
             CustomModelBot.maxTokenLimit = model.contextWindow;
             CustomModelBot.isReasoning = !!model.isReasoning;
 
-            // 准备 OpenAI 格式的消息
-            // 如果 prompt 是字符串，则创建一个简单的用户消息
-            // 如果 prompt 是对象且有 getOpenAIMessages 方法，则使用它
-            // 否则使用默认格式
+            // 准备 OpenAI 格式的消息，使用历史记录
             let messages;
             if (typeof prompt === 'string') {
-                messages = [{ role: 'user', content: prompt }];
+                messages = this.getOpenAIMessages(prompt);
             } else if (prompt && typeof prompt.getOpenAIMessages === 'function') {
                 messages = prompt.getOpenAIMessages();
             } else {
-                messages = [{ role: 'user', content: String(prompt) }];
+                messages = this.getOpenAIMessages(String(prompt));
             }
 
             Logger.log('Custom model chat with messages:', messages);
@@ -253,6 +319,7 @@ export class CustomModelBot {
             let finalContent = '';
             let accumulatedContent = '';
             let accumulatedReasoningContent = '';
+            const messageID = Date.now().toString();
 
             return new Promise((resolve, reject) => {
                 this.customModelService.createStreamingChatCompletion(
@@ -324,8 +391,16 @@ export class CustomModelBot {
 
                         reject(error);
                     },
-                    // 处理完成
+                    // 完成回调
                     () => {
+                        // 保存消息到历史记录
+                        if (typeof prompt === 'string') {
+                            // 保存用户消息
+                            this.botSession.session.addMessage(new SimpleBotMessage(prompt, Date.now().toString()));
+                            // 保存助手回复
+                            this.botSession.session.addMessage(new SimpleBotMessage(finalContent, messageID));
+                        }
+
                         if (onEvent) {
                             onEvent({
                                 type: "done",
@@ -335,30 +410,18 @@ export class CustomModelBot {
 
                         resolve(finalContent);
                     },
+                    // 中止控制器
                     this.controller ? this.controller.signal : undefined
                 );
             });
         } catch (error) {
-            Logger.error('Error in custom model chat:', error);
-
-            // 处理错误
-            if (onEvent) {
-                onEvent({
-                    type: "error",
-                    error: {
-                        code: ErrorCode.UNKNOWN_ERROR,
-                        message: error.message || 'Unknown error'
-                    }
-                });
-            }
-
+            Logger.error('Error in chat method:', error);
             throw error;
         }
     }
 
     public abort() {
         if (this.controller) {
-            Logger.log('Custom model request aborted');
             this.controller.abort();
             this.controller = null;
         }
@@ -419,8 +482,9 @@ export class CustomModelBot {
 // Factory function to create custom model bot class
 export function createCustomModelBot(customModelId: string) {
     const CustomBot = class extends CustomModelBot {
-        constructor() {
-            super(customModelId);
+        constructor(params) {
+            const newParams = { ...params, customModelId };
+            super(newParams);
         }
     };
 

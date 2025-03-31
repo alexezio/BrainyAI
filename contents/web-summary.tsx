@@ -40,15 +40,6 @@ const SummaryButton = () => {
             Logger.log("Error in web summarization:", error)
         }
     }
-
-    return (
-        <div
-            onClick={handleSummarize}
-            className="fixed right-5 top-1/4 z-50 flex flex-col items-center cursor-pointer bg-white rounded-lg shadow-lg p-2 hover:bg-gray-100"
-        >
-            <div className="text-sm font-medium">网络总结</div>
-        </div>
-    )
 }
 
 export default SummaryButton 

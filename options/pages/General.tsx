@@ -23,7 +23,8 @@ export default function General() {
         supportImage: 'No',
         contextWindow: 8000,
         temperature: 0.7,
-        isReasoning: false
+        isReasoning: false,
+        apiVersion: ''
     });
 
     // Keyboard shortcut settings
@@ -50,7 +51,8 @@ export default function General() {
             supportImage: model.supportImage || 'No',
             contextWindow: model.contextWindow || 8000,
             temperature: model.temperature || 0.7,
-            isReasoning: !!model.isReasoning
+            isReasoning: !!model.isReasoning,
+            apiVersion: model.apiVersion || ''
         });
         setIsModelModalVisible(true);
     };
@@ -126,7 +128,8 @@ export default function General() {
             supportImage: 'No',
             contextWindow: 8000,
             temperature: 0.7,
-            isReasoning: false
+            isReasoning: false,
+            apiVersion: ''
         });
     };
 
@@ -144,7 +147,8 @@ export default function General() {
             supportImage: 'No',
             contextWindow: 8000,
             temperature: 0.7,
-            isReasoning: false
+            isReasoning: false,
+            apiVersion: ''
         });
     };
 
@@ -161,7 +165,8 @@ export default function General() {
             supportImage: 'No',
             contextWindow: 8000,
             temperature: 0.7,
-            isReasoning: false
+            isReasoning: false,
+            apiVersion: ''
         });
         setIsModelModalVisible(true);
     };
@@ -429,6 +434,18 @@ export default function General() {
                             </div>
                         )}
                     </div>
+
+                    {modelForm.apiType === 'Azure OpenAI' && (
+                        <div>
+                            <label className="block mb-1 text-red-500">* API Version</label>
+                            <Input
+                                placeholder="2023-05-15"
+                                value={modelForm.apiVersion}
+                                onChange={e => handleModelFormChange('apiVersion', e.target.value)}
+                            />
+                            <p className="text-sm text-gray-500 mt-1">Required for Azure OpenAI API</p>
+                        </div>
+                    )}
 
                     <div>
                         <label className="block mb-1">Support Image <Tooltip title="Enable if your model supports image input"><InfoCircleOutlined /></Tooltip></label>

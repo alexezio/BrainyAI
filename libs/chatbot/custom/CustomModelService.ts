@@ -12,6 +12,7 @@ export interface CustomModel {
     contextWindow: number;
     temperature: number;
     isReasoning: boolean;
+    apiVersion?: string; // Optional API version for Azure OpenAI
 }
 
 export class CustomModelService {
@@ -83,7 +84,13 @@ export class CustomModelService {
         }
 
         try {
-            const response = await fetch(`${model.apiBaseUrl}/chat/completions`, {
+            // Construct the API URL with version parameter for Azure OpenAI
+            let apiUrl = `${model.apiBaseUrl}/chat/completions`;
+            if (model.apiType === 'Azure OpenAI' && model.apiVersion) {
+                apiUrl = `${model.apiBaseUrl}/chat/completions?api-version=${model.apiVersion}`;
+            }
+
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
